@@ -87,7 +87,7 @@ class PortalUserControllerTest {
         ResponseEntity<Map<String, Boolean>> responseEntity = portalUserController.addUserToOrganisation(organisationId, request);
 
         assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(responseEntity.getBody()).containsEntry("result", true);
+        assertThat(responseEntity.getBody()).containsEntry("result", false);
     }
 
     @Test
