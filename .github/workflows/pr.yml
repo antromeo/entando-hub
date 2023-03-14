@@ -43,28 +43,25 @@ jobs:
         with:
           regexp: "^EHUB-[0-9]{3,5} .*$"
           helpMessage: "Example: 'EHUB-123 A change'"
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: Pack the application bundle
         id: pack
         env:
-          REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USER }}
-          REGISTRY_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
           REGISTRY_HOST: registry.hub.docker.com
           DOCKER_ORG: ${{ secrets.DOCKER_ORG }}
         run: |
-          docker login $REGISTRY_HOST -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD 
           versionSuffix=$(echo "${{ github.event.pull_request.title }}" | awk '{print $1}')
-          cd application 
           bash ../.github/functions/utils.sh setBundleVersion -$versionSuffix 
           bash ../.github/functions/utils.sh setComponentVersions -$versionSuffix 
           ent --debug bundle pack --org $DOCKER_ORG --stdout --fail-fast 
-          ent --debug bundle publishh
-          exit_code=$?
-          if [ $exit_code -ne 0 ]; then
-            echo "Command2 failed with exit code $exit_code"
-            exit 1
-          fi 
+          ent --debug bundle publish
           version=$(bash ../.github/functions/utils.sh getBundleImage) 
           echo "VERSION=$version" >> $GITHUB_OUTPUT
+        working-directory: ./application
       - name: Publish artifact version
         uses: thollander/actions-comment-pull-request@v2
         with:
