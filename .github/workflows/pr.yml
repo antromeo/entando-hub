@@ -51,15 +51,14 @@ jobs:
           REGISTRY_HOST: registry.hub.docker.com
           DOCKER_ORG: ${{ secrets.DOCKER_ORG }}
         run: |
-          set -e
-          docker login $REGISTRY_HOST -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
-          versionSuffix=$(echo "${{ github.event.pull_request.title }}" | awk '{print $1}')
-          cd application
-          bash ../.github/functions/utils.sh setBundleVersion -$versionSuffix
-          bash ../.github/functions/utils.sh setComponentVersions -$versionSuffix
-          ent --debug bundle pack --org $DOCKER_ORG --stdout --fail-fast
-          ent --debug bundle publishh
-          version=$(bash ../.github/functions/utils.sh getBundleImage)
+          docker login $REGISTRY_HOST -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD &&
+          versionSuffix=$(echo "${{ github.event.pull_request.title }}" | awk '{print $1}') &&
+          cd application &&
+          bash ../.github/functions/utils.sh setBundleVersion -$versionSuffix &&
+          bash ../.github/functions/utils.sh setComponentVersions -$versionSuffix &&
+          ent --debug bundle pack --org $DOCKER_ORG --stdout --fail-fast &&
+          ent --debug bundle publishh &&
+          version=$(bash ../.github/functions/utils.sh getBundleImage) &&
           echo "VERSION=$version" >> $GITHUB_OUTPUT
       - name: Publish artifact version
         uses: thollander/actions-comment-pull-request@v2
