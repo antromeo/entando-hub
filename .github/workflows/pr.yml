@@ -49,8 +49,9 @@ jobs:
           REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USER }}
           REGISTRY_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
           REGISTRY_HOST: registry.hub.docker.com
-          DOCKER_ORG: entando
+          DOCKER_ORG: ${{ secrets.DOCKER_ORG }}
         run: |
+          set -e
           docker login $REGISTRY_HOST -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
           versionSuffix=$(echo "${{ github.event.pull_request.title }}" | awk '{print $1}')
           cd application
@@ -85,7 +86,7 @@ jobs:
           REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USER }}
           REGISTRY_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
           REGISTRY_HOST: registry.hub.docker.com
-          DOCKER_ORG: entando
+          DOCKER_ORG: ${{ secrets.DOCKER_ORG }}
         run: |
           docker login $REGISTRY_HOST -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
           versionSuffix=$(echo "${{ github.event.pull_request.title }}" | awk '{print $1}')
