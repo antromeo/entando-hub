@@ -20,14 +20,6 @@ jobs:
         with:
           regexp: "^EHUB-[0-9]{3,5} .*$"
           helpMessage: "Example: 'EHUB-123 A change'"
-      - name: Pack the application bundle
-        id: pack
-        env:
-          REGISTRY_HOST: registry.hub.docker.com
-          DOCKER_ORG: ${{ secrets.DOCKER_ORG }}
-        run: |
-          ent --debug bundle pack --org $DOCKER_ORG --stdout --fail-fast 
-        working-directory: ./application
       - uses: redhat-actions/oc-installer@v1
       - name: Login to dev
         uses: redhat-actions/oc-login@v1
