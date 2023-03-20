@@ -40,5 +40,5 @@ jobs:
         run: |
           ent profile new okd-aromeo test-aromeo test-aromeo
           ent profile use okd-aromeo
-          ent ecr deploy --repo=docker://registry.hub.docker.com/entando/entando-hub-application:3.0.0-SNAPSHOT 
+          ent ecr deploy --repo=docker://entando/entando-hub-application:3.0.0-SNAPSHOT 
         working-directory: ./application 
