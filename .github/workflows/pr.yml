@@ -29,7 +29,7 @@ jobs:
           namespace: ${{ secrets.OPENSHIFT_NAMESPACE }}
       - name: publish to dev 
         env: 
-         SKIP_DEPLOY: 'false'
+         SKIP_DEPLOY: ${{ vars.SKIP_DEPLOY }}
          PROFILE_NAME: ${{ vars.PROFILE_NAME }}
          ENTANDO_APP_NAME: ${{ vars.ENTANDO_APP_NAME }}
          ENTANDO_NAMESPACE: ${{ vars.ENTANDO_NAMESPACE }}
