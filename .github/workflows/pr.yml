@@ -5,6 +5,12 @@ on:
       - opened
       - synchronize
       - reopened
+env: 
+  SKIP_DEPLOY: ${{ vars.SKIP_DEPLOY }}
+  PROFILE_NAME: ${{ vars.PROFILE_NAME }}
+  ENTANDO_APP_NAME: ${{ vars.ENTANDO_APP_NAME }}
+  ENTANDO_NAMESPACE: ${{ vars.ENTANDO_NAMESPACE }}
+
 jobs:
   app-build:
     runs-on: ubuntu-latest
@@ -21,18 +27,13 @@ jobs:
           regexp: "^EHUB-[0-9]{3,5} .*$"
           helpMessage: "Example: 'EHUB-123 A change'"
       - uses: redhat-actions/oc-installer@v1
-      - name: Login to dev
+      - name: Cluster Login
         uses: redhat-actions/oc-login@v1
         with:
           openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
           openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
           namespace: ${{ secrets.OPENSHIFT_NAMESPACE }}
-      - name: publish to dev 
-        env: 
-         SKIP_DEPLOY: ${{ vars.SKIP_DEPLOY }}
-         PROFILE_NAME: ${{ vars.PROFILE_NAME }}
-         ENTANDO_APP_NAME: ${{ vars.ENTANDO_APP_NAME }}
-         ENTANDO_NAMESPACE: ${{ vars.ENTANDO_NAMESPACE }}
+      - name: Deploy on EntandoApp 
         id: publication 
         if: ${{ env.SKIP_DEPLOY == 'false' }}
         run: |
