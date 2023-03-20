@@ -28,9 +28,15 @@ jobs:
           openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
           namespace: ${{ secrets.OPENSHIFT_NAMESPACE }}
       - name: publish to dev 
+        env: 
+         SKIP_DEPLOY: 'false'
+         PROFILE_NAME: ${{ env.PROFILE_NAME }}
+         ENTANDO_APP_NAME: ${{ env.ENTANDO_APP_NAME }}
+         ENTANDO_NAMESPACE: ${{ env.ENTANDO_NAMESPACE }}
         id: publication 
+        if: ${{ env.SKIP_DEPLOY == 'false' }}
         run: |
-          ent profile new okd-aromeo test-aromeo test-aromeo
-          ent profile use okd-aromeo
+          ent profile new $PROFILE_NAME $ENTANDO_APP_NAME $ENTANDO_NAMESPACE
+          ent profile use $PROFILE_NAME
           ent ecr deploy --repo=docker://entando/entando-hub-application
         working-directory: ./application 
