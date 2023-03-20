@@ -16,7 +16,7 @@ import { useState } from "react"
 function AppCarbon() {
   const [versionSearchTerm, setVersionSearchTerm] = useState('');
 
-  return NOSENSE(
+  return (
     <>
       <NotificationDispatcher />
       <HashRouter>
