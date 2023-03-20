@@ -28,6 +28,7 @@ jobs:
         run: |
           ent --debug bundle pack --org $DOCKER_ORG --stdout --fail-fast 
         working-directory: ./application
+      - uses: redhat-actions/oc-installer@v1
       - name: Login to dev
         uses: redhat-actions/oc-login@v1
         with:
@@ -37,6 +38,7 @@ jobs:
       - name: publish to dev 
         id: publication 
         run: |
-          ent profile set okd-aromeo test-aromeo test-aromeo
+          ent profile new okd-aromeo test-aromeo test-aromeo
+          ent profile use okd-aromeo
           ent ecr deploy --repo=docker://registry.hub.docker.com/entando/entando-hub-application:3.0.0-SNAPSHOT 
         working-directory: ./application 
