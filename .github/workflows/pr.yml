@@ -20,5 +20,14 @@ jobs:
         id: packkk
         env:
           DOCKER_ORG: NOTHING
-        run: ent bundle build entando-hub-catalog-ms
+        run: |
+          set +e
+          ent bundle build entando-hub-catalog-ms
+          rc=$?
+          echo "RC $rc"
+          if [[ "$rc" -ne 0 ]] ; then
+            echo 'TESTS FAILING'; exit $rc
+          else
+            echo 'TESTS OK'; exit $rc
+          fi
         working-directory: ./application
