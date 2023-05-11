@@ -16,13 +16,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
       - name: Pack the application
+        shell: bash
         id: packkk
         env:
-          DOCKER_ORG: lcorsettientando
+          DOCKER_ORG: NOTHING
         run: |
           set +e
-          #ent bundle build entando-hub-catalog-ms
-          rc="1"
+          ent bundle build entando-hub-catalog-ms
+          rc=$?
           echo "RC $rc"
           if [[ "$rc" -ne 0 ]] ; then
             echo 'TESTS FAILING'; exit $rc
