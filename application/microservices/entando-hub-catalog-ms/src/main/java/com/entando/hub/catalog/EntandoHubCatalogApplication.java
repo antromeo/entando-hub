@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Bean;
 @Slf4j
 public class EntandoHubCatalogApplication {
 	public static void main(String[] args) {
-		SpringApplication.run(EntandoHubCatalogApplication.class, args);
+		SpringApplication.run(EntandoHubCatalogApplication.classError, args);
 	}
 
 }

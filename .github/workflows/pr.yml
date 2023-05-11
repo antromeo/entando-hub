@@ -1,4 +1,4 @@
-name: PR workflow
+name: My work
 on:
   pull_request:
     types:
@@ -6,98 +6,28 @@ on:
       - synchronize
       - reopened
 jobs:
-  sonarqube:
+  tests:
     runs-on: ubuntu-latest
     container:
       image: entando/ent:v7.1.3
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - name: SonarQube Scan
-      run: |
-        versionSuffix=$(echo "${{ github.event.pull_request.title }}" | awk '{print $1}')
-        cd application
-        bash ../.github/functions/utils.sh setBundleVersion -$versionSuffix
-        bash ../.github/functions/utils.sh setComponentVersions -$versionSuffix
-        ent bundle build --all --stdout --fail-fast
-        cd microservices/entando-hub-catalog-ms && mvn sonar:sonar --no-transfer-progress && cd ../..
-        cd microfrontends/eh-login && ent npm run sonar && cd ../..
-        cd microfrontends/eh-app && ent npm run sonar && cd ../..
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
-  app-build:
-    runs-on: ubuntu-latest
-    container:
-      image: entando/ent:v7.1.3
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
+      #volumes:
+      #  - /var/run/docker.sock:/var/run/docker.sock
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-      - name: Check PR name
-        uses: Slashgear/action-check-pr-title@v4.3.0
-        with:
-          regexp: "^EHUB-[0-9]{3,5} .*$"
-          helpMessage: "Example: 'EHUB-123 A change'"
-      - name: Pack the application bundle
-        id: pack
+      - name: Pack the application
+        shell: bash
+        id: packkk
         env:
-          REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USER }}
-          REGISTRY_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          REGISTRY_HOST: registry.hub.docker.com
-          DOCKER_ORG: entando
+          DOCKER_ORG: NOTHING
         run: |
-          docker login $REGISTRY_HOST -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
-          versionSuffix=$(echo "${{ github.event.pull_request.title }}" | awk '{print $1}')
-          cd application
-          bash ../.github/functions/utils.sh setBundleVersion -$versionSuffix
-          bash ../.github/functions/utils.sh setComponentVersions -$versionSuffix
-          ent --debug bundle pack --org $DOCKER_ORG --stdout --fail-fast
-          ent --debug bundle publish
-          version=$(bash ../.github/functions/utils.sh getBundleImage)
-          echo "VERSION=$version" >> $GITHUB_OUTPUT
-      - name: Publish artifact version
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: |
-            Requested publication of version: `${{ steps.pack.outputs.VERSION }}`
-  layout-build:
-    runs-on: ubuntu-latest
-    container:
-      image: entando/ent:v7.1.3
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-      - name: Check PR name
-        uses: Slashgear/action-check-pr-title@v4.3.0
-        with:
-          regexp: "^EHUB-[0-9]{3,5} .*$"
-          helpMessage: "Example: 'EHUB-123 A change'"
-      - name: Pack the layout bundle
-        id: pack
-        env:
-          REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USER }}
-          REGISTRY_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          REGISTRY_HOST: registry.hub.docker.com
-          DOCKER_ORG: entando
-        run: |
-          docker login $REGISTRY_HOST -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
-          versionSuffix=$(echo "${{ github.event.pull_request.title }}" | awk '{print $1}')
-          cd content
-          bash ../.github/functions/utils.sh setBundleVersion -$versionSuffix
-          sh set-bundle-id.sh $DOCKER_ORG
-          ent --debug bundle pack --org $DOCKER_ORG --stdout
-          ent --debug bundle publish
-          version=$(bash ../.github/functions/utils.sh getBundleImage)
-          echo "VERSION=$version" >> $GITHUB_OUTPUT
-      - name: Publish artifact version
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: |
-            Requested publication of version: `${{ steps.pack.outputs.VERSION }}`
+          set +e
+          ent bundle build entando-hub-catalog-ms
+          rc=$?
+          echo "RC $rc"
+          if [[ "$rc" -ne 0 ]] ; then
+            echo 'TESTS FAILING'; exit $rc
+          else
+            echo 'TESTS OK'; exit $rc
+          fi
+        working-directory: ./application
