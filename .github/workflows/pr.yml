@@ -5,30 +5,13 @@ on:
       - opened
       - synchronize
       - reopened
+env: 
+  SKIP_DEPLOY: ${{ vars.SKIP_DEPLOY }}
+  PROFILE_NAME: ${{ vars.PROFILE_NAME }}
+  ENTANDO_APP_NAME: ${{ vars.ENTANDO_APP_NAME }}
+  ENTANDO_NAMESPACE: ${{ vars.ENTANDO_NAMESPACE }}
+
 jobs:
-  sonarqube:
-    runs-on: ubuntu-latest
-    container:
-      image: entando/ent:v7.1.3
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - name: SonarQube Scan
-      run: |
-        versionSuffix=$(echo "${{ github.event.pull_request.title }}" | awk '{print $1}')
-        cd application
-        bash ../.github/functions/utils.sh setBundleVersion -$versionSuffix
-        bash ../.github/functions/utils.sh setComponentVersions -$versionSuffix
-        ent bundle build --all --stdout --fail-fast
-        cd microservices/entando-hub-catalog-ms && mvn sonar:sonar --no-transfer-progress && cd ../..
-        cd microfrontends/eh-login && ent npm run sonar && cd ../..
-        cd microfrontends/eh-app && ent npm run sonar && cd ../..
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
   app-build:
     runs-on: ubuntu-latest
     container:
@@ -43,61 +26,18 @@ jobs:
         with:
           regexp: "^EHUB-[0-9]{3,5} .*$"
           helpMessage: "Example: 'EHUB-123 A change'"
-      - name: Pack the application bundle
-        id: pack
-        env:
-          REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USER }}
-          REGISTRY_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          REGISTRY_HOST: registry.hub.docker.com
-          DOCKER_ORG: entando
+      - uses: redhat-actions/oc-installer@v1
+      - name: Cluster Login
+        uses: redhat-actions/oc-login@v1
+        with:
+          openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
+          openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+          namespace: ${{ secrets.OPENSHIFT_NAMESPACE }}
+      - name: Deploy on EntandoApp 
+        id: publication 
+        if: ${{ env.SKIP_DEPLOY == 'false' }}
         run: |
-          docker login $REGISTRY_HOST -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
-          versionSuffix=$(echo "${{ github.event.pull_request.title }}" | awk '{print $1}')
-          cd application
-          bash ../.github/functions/utils.sh setBundleVersion -$versionSuffix
-          bash ../.github/functions/utils.sh setComponentVersions -$versionSuffix
-          ent --debug bundle pack --org $DOCKER_ORG --stdout --fail-fast
-          ent --debug bundle publish
-          version=$(bash ../.github/functions/utils.sh getBundleImage)
-          echo "VERSION=$version" >> $GITHUB_OUTPUT
-      - name: Publish artifact version
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: |
-            Requested publication of version: `${{ steps.pack.outputs.VERSION }}`
-  layout-build:
-    runs-on: ubuntu-latest
-    container:
-      image: entando/ent:v7.1.3
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-      - name: Check PR name
-        uses: Slashgear/action-check-pr-title@v4.3.0
-        with:
-          regexp: "^EHUB-[0-9]{3,5} .*$"
-          helpMessage: "Example: 'EHUB-123 A change'"
-      - name: Pack the layout bundle
-        id: pack
-        env:
-          REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USER }}
-          REGISTRY_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          REGISTRY_HOST: registry.hub.docker.com
-          DOCKER_ORG: entando
-        run: |
-          docker login $REGISTRY_HOST -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
-          versionSuffix=$(echo "${{ github.event.pull_request.title }}" | awk '{print $1}')
-          cd content
-          bash ../.github/functions/utils.sh setBundleVersion -$versionSuffix
-          sh set-bundle-id.sh $DOCKER_ORG
-          ent --debug bundle pack --org $DOCKER_ORG --stdout
-          ent --debug bundle publish
-          version=$(bash ../.github/functions/utils.sh getBundleImage)
-          echo "VERSION=$version" >> $GITHUB_OUTPUT
-      - name: Publish artifact version
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: |
-            Requested publication of version: `${{ steps.pack.outputs.VERSION }}`
+          ent profile new $PROFILE_NAME $ENTANDO_APP_NAME $ENTANDO_NAMESPACE
+          ent profile use $PROFILE_NAME
+          ent ecr deploy --repo=docker://entando/entando-hub-application
+        working-directory: ./application 
